@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js'
 import { Cost, Currency, Investment, InvestmentEnum, Upgrade, UpgradeType, WorldIndex } from './Types'
 
 import Earth from './WorldData/Earth'
@@ -25,11 +26,15 @@ import Merry_Merger from './WorldData/Merry_Merger'
 import Profit_a_Bowl from './WorldData/Profit_a_Bowl'
 
 export const illionsArr = ['', 'Million', 'Billion', 'Trillion', 'Quadrillion', 'Quintillion', 'Sextillion', 'Septillion', 'Octillion', 'Nonillion', 'Decillion', 'Undecillion', 'Duodecillion', 'Tredecillion', 'Quattuordecillion', 'Quindecillion', 'Sexdecillion', 'Septendecillion', 'Octodecillion', 'Novemdecillion', 'Vigintillion', 'Unvigintillion', 'Duovigintillion', 'Tresvigintillion', 'Quattuorvigintillion', 'Quinvigintillion', 'Sexvigintillion', 'Septenvigintillion', 'Octovigintillion', 'Novemvigintillion', 'Trigintillion', 'Untrigintillion', 'Duotrigintillion', 'Tretrigintillion', 'Quattuortrigintillion', 'Quintrigintillion', 'Sextrigintillion', 'Septentrigintillion', 'Octotrigintillion', 'Novemtrigintillion', 'Quadragintillion', 'Unquadragintillion', 'Duoquadragintillion', 'Trequadragintillion', 'Quattuorquadragintillion', 'Quinquadragintillion', 'Sexquadragintillion', 'Septquadragintillion', 'Octoquadragintillion', 'Novemquadragintillion', 'Quinquagintillion', 'Unquinquagintillion', 'Duoquinquagintillion', 'Trequinquagintillion', 'Quattuorquinquagintillion', 'Quinquinquagintillion', 'Sexquinquagintillion', 'Septquinquagintillion', 'Octoquinquagintillion', 'Novemquinquagintillion', 'Sexagintillion', 'Unsexagintillion', 'Duosexagintillion', 'Tresexagintillion', 'Quattuorsexagintillion', 'Quinsexagintillion', 'Sexsexagintillion', 'Septsexagintillion', 'Octosexagintillion', 'Novemsexagintillion', 'Septuagintillion', 'Unseptuagintillion', 'Duoseptuagintillion', 'Treseptuagintillion', 'Quattuorseptuagintillion', 'Quinseptuagintillion', 'Sexseptuagintillion', 'Septseptuagintillion', 'Octoseptuagintillion', 'Novemseptuagintillion', 'Octogintillion', 'Unoctogintillion', 'Duooctogintillion', 'Treoctogintillion', 'Quattuoroctogintillion', 'Quinoctogintillion', 'Sexoctogintillion', 'Septoctogintillion', 'Octooctogintillion', 'Novemoctogintillion', 'Nonagintillion', 'Unnonagintillion', 'Duononagintillion', 'Trenonagintillion', 'Quattuornonagintillion', 'Quinnonagintillion', 'Sexnonagintillion', 'Septnonagintillion', 'Octononagintillion', 'Novemnonagintillion', 'Centillion', 'Uncentillion'];
-export function formatLargeNumber(val: number | null) {
-	if (val === null || isNaN(val)) return null;
+export function formatLargeNumber(val: number | Decimal | null) {
+	if (val === null || isNaN(Number(val))) return null;
 	var out = "",
 	mCount = 0,
 	e = 6;
+	if (val instanceof Decimal) {
+		if (!val.isFinite()) return "Infinity";
+		val = val.toNumber();
+	}
 	if (val === Infinity) {
 		return "Infinity";
 	} else if (val !== null) {

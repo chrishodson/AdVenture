@@ -3,6 +3,7 @@ import Earth from './WorldData/Earth'
 import staticDataStore from './Store_StaticData'
 import userDataStore, { recUserDataStore, UserData } from './Store_UserData'
 import { InvestmentEnum, Recommendation, Upgrade, UpgradeCost, UpgradeType, WorldIndex } from './Types'
+import Decimal from 'decimal.js'
 
 interface CalcData {
 	inputData: UseBoundStore<StoreApi<UserData>>;
@@ -94,9 +95,9 @@ const calcStoreDefinition = (
 		let fromLevel = userData.investments[investmentIndex].number
 		if (fromLevel === '') return null
 		const staticData = staticDataStore.getState().staticData
-		let retVal = 1, managerDiscount = 1
+		let retVal = new Decimal(1), managerDiscount = new Decimal(1)
 		for (let i = 1; i < nUnlocks; i++) {
-			retVal += Math.pow(staticData.investments[investmentIndex].power, i)
+			retVal = retVal.plus(new Decimal(staticData.investments[investmentIndex].power).pow(i))
 		}
 		if (investmentIndex === 0 && WorldIndex[userDataStore.getState().selectedWorld] === WorldIndex.Earth) {
 			fromLevel -= 1
@@ -113,17 +114,20 @@ const calcStoreDefinition = (
 				if (userData.managersBought[investmentIndex][i]) {
 					if (WorldIndex[userDataStore.getState().selectedWorld] === WorldIndex.Earth) {
 						if (i === 0) {
-							managerDiscount = 0.9
+							managerDiscount = new Decimal(0.9)
 						} else {
-							managerDiscount *= 0.00001
+							managerDiscount = managerDiscount.times(0.00001)
 						}
 					} else {
-						managerDiscount = 0.75
+						managerDiscount = new Decimal(0.75)
 					}
 				}
 			}
 		}
-		return retVal * staticData.investments[investmentIndex].cost * Math.pow(staticData.investments[investmentIndex].power, fromLevel) * managerDiscount
+		return retVal.times(staticData.investments[investmentIndex].cost)
+			.times(new Decimal(staticData.investments[investmentIndex].power).pow(fromLevel))
+			.times(managerDiscount)
+			.toNumber()
 	},
 	calcUpgradeCostAll: () => {
 		const userData = get().inputData.getState(),
@@ -136,11 +140,15 @@ const calcStoreDefinition = (
 				lowestLevel = num
 			}
 		}
-		let i = 0
-		while (i < staticDataUnlocks[staticDataUnlocks.length - 1].length && lowestLevel >= (staticDataUnlocks[staticDataUnlocks.length - 1][i].cost?.price || Infinity)) {
-			i++
+		let unlocksArr = staticDataUnlocks[staticDataUnlocks.length - 1];
+		let i = 0;
+		while (
+			i < unlocksArr.length &&
+			unlocksArr[i] && lowestLevel >= (unlocksArr[i].cost?.price || Infinity)
+		) {
+			i++;
 		}
-		let unlockLevel = staticDataUnlocks[staticDataUnlocks.length - 1][i].cost?.price || 0
+		let unlockLevel = unlocksArr[i]?.cost?.price || 0
 		if (unlockLevel === 0) return 0
 		if (i !== staticDataUnlocks[staticDataUnlocks.length - 1].length) {
 			for (let j = 0; j < userData.investments.length; j++) {
