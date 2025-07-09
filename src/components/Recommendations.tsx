@@ -9,6 +9,7 @@ import {
 	TableRow,
 } from "@/components/ui/table"
 import { createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from '@tanstack/react-table'
+import Decimal from 'decimal.js'
 
 import recDataStore from './Store_RecData'
 import { InvestmentEnum, Recommendation } from './Types'
@@ -86,19 +87,19 @@ export default function RecommendationFilters() {
 		cdCalculate()
 	}
 
-	const calcUpgradeScore = (unlockCostTime: number) => {
-		if (!isFinite(unlockCostTime)) return 0
-		const recCDTotalIncome = recCalcDataStore.getState().totalIncome
-		var overflowPotential = recCDTotalIncome * unlockCostTime,
+	const calcUpgradeScore = (unlockCostTime: number | Decimal) => {
+		if (!isFinite(Number(unlockCostTime))) return 0
+		const recCDTotalIncome = new Decimal(recCalcDataStore.getState().totalIncome)
+		var overflowPotential = recCDTotalIncome.times(unlockCostTime),
 		divNum = 0,
-		retVal = recCDTotalIncome - cdTotalIncome
-		while (!isFinite(overflowPotential)) {
+		retVal = recCDTotalIncome.minus(cdTotalIncome)
+		while (!overflowPotential.isFinite()) {
 			divNum += 100
-			overflowPotential = recCDTotalIncome * (unlockCostTime / Number('1e+' + divNum))
+			overflowPotential = recCDTotalIncome.times(new Decimal(unlockCostTime).div(new Decimal('1e+' + divNum)))
 		}
-		retVal *= 1000000000000000000000 / overflowPotential
-		if (divNum !== 0) retVal *= Number('1e+' + divNum)
-		return retVal
+		retVal = retVal.times(new Decimal('1e+21')).div(overflowPotential)
+		if (divNum !== 0) retVal = retVal.times(new Decimal('1e+' + divNum))
+		return retVal.toNumber()
 	}
 
 	const calcRecommendations = () => {
